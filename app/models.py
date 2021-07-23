@@ -10,9 +10,7 @@ class commonLearning(models.Model):
     #user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     have_learned = models.BinaryField(default=False)
     order_of_learning = models.PositiveIntegerField()
-    item_learned = models.TextField()
-    meaning = models.ForeignKey(meanings, on_delete=models.DO_NOTHING)
-    reading = models.ForeignKey(readings, on_delete=models.DO_NOTHING)
+    item = models.TextField()
     date_learned = models.DateTimeField(blank=True, null=True)
     date_last_reviewed = models.DateTimeField(blank=True, null=True)
     recall_prob = models.FloatField()
@@ -25,7 +23,7 @@ class commonLearning(models.Model):
         self.date_last_reviewed = timezone.now()
         self.save()
 
-    def review(self, bayes_model,  quiz_result):
+    def review(self, bayes_model, quiz_result):
         self.recall_prob = ebisu.updateRecall([bayes_model.alpha, bayes_model.beta, bayes_model.half_life],
                                               quiz_result, 1,
                                               (timezone.now() - self.date_last_reviewed)/timedelta()hours=1)
@@ -41,6 +39,7 @@ class vocab(commonLearning):
     linked_kanji = models.ManyToManyField(kanji)
 
 class meanings(models.Model):
+    item = models.ForeignKey(commonLearning, on_delete=models.DO_NOTHING)
     meanings = models.TextField()
 
     def __str__(self):
@@ -53,7 +52,7 @@ class readings(models.Model):
         return self.readings
 
 class bayes_model(models.Model):
-    item_learned = models.ForeignKey(commonLearning, on_delete=models.CASCADE)
+    item = models.OneToOneField(commonLearning, on_delete=models.CASCADE)
     alpha = models.FloatField(default = 4.0)
     beta = models.FloatField(default = 4.0)
     half_life = models.FloatField(default = 24.0)
