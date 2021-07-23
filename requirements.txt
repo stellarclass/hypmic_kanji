@@ -1,0 +1,6 @@
+psycopg2
+django
+ebisu
+dj-database-url
+gunicorn
+whitenoise
