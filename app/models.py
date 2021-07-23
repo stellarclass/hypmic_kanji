@@ -43,13 +43,14 @@ class meanings(models.Model):
     meanings = models.TextField()
 
     def __str__(self):
-        return self.meanings
+        return 'Meaning(s) for %s are %s' % (self.item, self.meanings)
 
 class readings(models.Model):
+    item = models.ForeignKey(commonLearning, on_delete=models.DO_NOTHING)
     readings = models.TextField()
 
     def __str__(self):
-        return self.readings
+        return 'Reading(s) for %s are %s' % (self.item, self.readings)
 
 class bayes_model(models.Model):
     item = models.OneToOneField(commonLearning, on_delete=models.CASCADE)
@@ -58,4 +59,4 @@ class bayes_model(models.Model):
     half_life = models.FloatField(default = 24.0)
 
     def __str__(self):
-        return 'Current model for %s: [%s, %s, %s]' % (self.)
+        return 'Current model for %s: [%s, %s, %s]' % (self.item, self.alpha, self.beta, self.half_life)
