@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-class user(models.Model):
+"""class user(models.Model):
     pass
 
 class learningState(models.Model):
@@ -40,7 +40,7 @@ class learningState(models.Model):
             self.vocab = obj
             self.kanji = None
         else:
-            raise ValueError("obj parameter must be an object of Kanji or Vocab class")
+            raise ValueError("obj parameter must be an object of Kanji or Vocab class")"""
 
 class commonLearning(models.Model):
     # TBD: change name of class, remove items that have been moved to learning state
