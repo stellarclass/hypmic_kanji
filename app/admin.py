@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import *
 
-# Register your models here.
+admin.site.register(kanji)
+admin.site.register(vocab)
+admin.site.register(meanings)
+admin.site.register(readings)

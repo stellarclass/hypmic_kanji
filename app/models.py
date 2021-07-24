@@ -3,9 +3,48 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+class user(models.Model):
+    pass
+
+class learningState(models.Model):
+    # user-specific details
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    user_notes = models.TextField(blank=True, null=True)
+
+    # linking to the item to be learned
+    kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
+    vocab = models.ForeignKey(vocab, blank=True, null=True, on_delete=models.DO_NOTHING)
+
+    # details about when item was learned
+    have_learned = models.BooleanField(default=False)
+    date_learned = models.DateTimeField(blank=True, null=True)
+
+    # details about reviewing
+    date_last_reviewed = models.DateTimeField(blank=True, null=True)
+    recall_prob = models.FloatField(blank=True, null=True)
+    alpha = models.FloatField(default=4.0)
+    beta = models.FloatField(default=4.0)
+    half_life = models.FloatField(default=24.0)
+
+    # properties for linking to item to be learned (kanji or vocab)
+    @property
+    def type_of_item(self):
+        return self.kanji or self.vocab
+
+    @type_of_item.setter
+    def type_of_item(self, obj):
+        if type(obj) == kanji:
+            self.kanji = obj
+            self.vocab = None
+        elif type(obj) == vocab:
+            self.vocab = obj
+            self.kanji = None
+        else:
+            raise ValueError("obj parameter must be an object of Kanji or Vocab class")
+
 class commonLearning(models.Model):
-    #user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
-    have_learned = models.BinaryField(default=False)
+    # TBD: change name of class, remove items that have been moved to learning state
+    have_learned = models.BooleanField(default=False)
     order_of_learning = models.PositiveIntegerField()
     item = models.TextField()
     date_learned = models.DateTimeField(blank=True, null=True)
@@ -29,8 +68,8 @@ class vocab(commonLearning):
     linked_kanji = models.ManyToManyField(kanji)
 
 class meanings(models.Model):
-    kanji = models.ForeignKey(kanji, on_delete=models.DO_NOTHING)
-    vocab = models.ForeignKey(vocab, on_delete=models.DO_NOTHING)
+    kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
+    vocab = models.ForeignKey(vocab, blank=True, null=True, on_delete=models.DO_NOTHING)
     meanings = models.TextField()
     user_synonyms = models.TextField(blank=True, null=True)
 
@@ -53,8 +92,8 @@ class meanings(models.Model):
         return 'Meaning(s) are %s' % (self.meanings)
 
 class readings(models.Model):
-    kanji = models.ForeignKey(kanji, on_delete=models.DO_NOTHING)
-    vocab = models.ForeignKey(vocab, on_delete=models.DO_NOTHING)
+    kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
+    vocab = models.ForeignKey(vocab, blank=True, null=True, on_delete=models.DO_NOTHING)
     readings = models.TextField()
 
     @property
@@ -74,3 +113,27 @@ class readings(models.Model):
 
     def __str__(self):
         return 'Reading(s) are %s' % (self.readings)
+
+class source(models.Model):
+    item_source = models.TextField()
+    vocab = models.ManyToManyField(vocab)
+
+class examples(models.Model):
+    example_sentence = models.TextField()
+    vocab = models.ManyToManyField(vocab)
+    source = models.ManyToManyField(source)
+
+    @property
+    def type_of_item(self):
+        return self.kanji or self.vocab
+
+    @type_of_item.setter
+    def type_of_item(self, obj):
+        if type(obj) == kanji:
+            self.kanji = obj
+            self.vocab = None
+        elif type(obj) == vocab:
+            self.vocab = obj
+            self.kanji = None
+        else:
+            raise ValueError("obj parameter must be an object of Kanji or Vocab class")
