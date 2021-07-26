@@ -2,9 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Lesson</title>
 </head>
 <body>
+
+<h1>{{ review.item }}</h1>
+<p>{%if review.linked_kanji%}
+    This is vocab!
+    {% else %}
+    This is kanji!
+{% endif %}</p>
+<p>meaning: {% for meaning in meaning %}
+    {% if forloop.counter > 1%} | {% endif %}
+    {{ meaning.meanings }}
+{% endfor %}
+</p>
+<p>reading: {% for reading in reading %}
+    {% if forloop.counter > 1%} , {% endif %}
+    {{ reading.readings }}
+{% endfor %}
+</p>
 
 </body>
 </html>

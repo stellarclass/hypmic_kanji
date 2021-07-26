@@ -5,14 +5,15 @@
     <title>Lesson</title>
 </head>
 <body>
+
 <h1>{{ lesson.item }}</h1>
 <p>{%if lesson.linked_kanji%}
-    This is vocab!
+        This is vocab!
     {% else %}
-    This is kanji!
+        This is kanji!
 {% endif %}</p>
 <p>meaning: {% for meaning in meaning %}
-    {% if forloop.counter > 1%}, {% endif %}
+    {% if forloop.counter > 1%} | {% endif %}
     {{ meaning.meanings }}
 {% endfor %}
 </p>
@@ -21,5 +22,15 @@
     {{ reading.readings }}
 {% endfor %}
 </p>
+<!-- TBD: Add in "I've learned it" button that changes the learn state and makes it available for reviewing -->
+
+<form method="POST">
+    {% csrf_token %}
+    {{ user_syn_form.as_table }}
+    {{ kanji_form.as_table }}
+    <button type="submit" class="save btn btn-default">Lesson Learned!</button>
+</form>
+
+
 </body>
 </html>

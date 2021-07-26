@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Main Page</title>
 </head>
 <body>
-
+<h1>This is the main page</h1>
+<p>TBD: Tells user to login when not logged in</p>
+<p>Not sure what else goes on a main page,
+    but maybe temporarily make it the dashboard that links to lessons and reviews,
+    plus stats/details of items that have been learned?
+</p>
+<p><a href="{% url 'lesson_page' %}">Lessons</a></p> <!-- TBD: add in count of lessons -->
+<p><a href="{% url 'review_page' %}">Reviews</a></p> <!-- TBD: add in count of reviews -->
 </body>
 </html>

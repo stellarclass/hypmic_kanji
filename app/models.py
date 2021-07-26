@@ -71,7 +71,6 @@ class meanings(models.Model):
     kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
     vocab = models.ForeignKey(vocab, blank=True, null=True, on_delete=models.DO_NOTHING)
     meanings = models.TextField()
-    user_synonyms = models.TextField(blank=True, null=True)
 
     @property
     def type_of_item(self):
@@ -90,6 +89,10 @@ class meanings(models.Model):
 
     def __str__(self):
         return 'Meaning(s) are %s' % (self.meanings)
+
+class user_synonyms(models.Model):
+    meanings = models.ForeignKey(meanings, blank=True, null=True, on_delete=models.DO_NOTHING)
+    user_synonyms = models.TextField()
 
 class readings(models.Model):
     kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
@@ -115,25 +118,14 @@ class readings(models.Model):
         return 'Reading(s) are %s' % (self.readings)
 
 class source(models.Model):
+    # model for where the kanji/vocab are found (e.g. which songs, etc.)
     item_source = models.TextField()
-    vocab = models.ManyToManyField(vocab)
+    kanji = models.ManyToManyField(kanji, blank=True)
+    vocab = models.ManyToManyField(vocab, blank=True)
 
 class examples(models.Model):
+    # model for sample/context sentences (e.g. lyrics)
     example_sentence = models.TextField()
-    vocab = models.ManyToManyField(vocab)
-    source = models.ManyToManyField(source)
-
-    @property
-    def type_of_item(self):
-        return self.kanji or self.vocab
-
-    @type_of_item.setter
-    def type_of_item(self, obj):
-        if type(obj) == kanji:
-            self.kanji = obj
-            self.vocab = None
-        elif type(obj) == vocab:
-            self.vocab = obj
-            self.kanji = None
-        else:
-            raise ValueError("obj parameter must be an object of Kanji or Vocab class")
+    source = models.ForeignKey(source, on_delete=models.DO_NOTHING)
+    # vocab = models.ManyToManyField(vocab)
+    # instead of manually linking vocab, can probably do a filter on the contents?
