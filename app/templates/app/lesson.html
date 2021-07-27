@@ -26,7 +26,7 @@
 <form method="POST">
     {% csrf_token %}
     {{ user_syn_form.as_table }}
-    {{ kanji_form.as_table }}
+    {{ item_form.as_table }}
     <button type="submit" class="save btn btn-default">Lesson Learned!</button>
 </form>
 

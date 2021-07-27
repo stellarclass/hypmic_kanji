@@ -13,38 +13,55 @@ import random
 
 def lesson_page(request):
     # TBD: add in a view when there is nothing to learn
-    kanji_lesson = kanji.objects.filter(have_learned=False)
+    # if kanji is available, elif vocab, else nothing
+
+    kanji_lesson = kanji.objects.filter(have_learned=False).first()
+    if kanji_lesson:
+        meaning = meanings.objects.filter(Q(kanji__item=kanji_lesson))
+        reading = readings.objects.filter(Q(kanji__item=kanji_lesson))
+        #item_learned = get_object_or_404(kanji_lesson)
+        if request.method == "POST":
+            user_syn_form = MeaningSynonymsForm(request.POST)
+            kanji_form = KanjiLessonForm(request.POST, instance=kanji_lesson)
+            if user_syn_form.is_valid() and kanji_form.is_valid():
+                user_syn = user_syn_form.save(commit=False)
+                user_syn.kanji = kanji_lesson
+                user_syn.save()
+                kanji_form = kanji_form.save(commit=False)
+                kanji_form.have_learned = True
+                kanji_form.save()
+                return HttpResponseRedirect(reverse('lesson_page'))
+        else:
+            user_syn_form = MeaningSynonymsForm()
+            kanji_form = KanjiLessonForm(instance=kanji_lesson)
+        return render(request, 'app/lesson.html', {'lesson': kanji_lesson, 'meaning': meaning, 'reading': reading,
+                                                   'user_syn_form': user_syn_form, 'item_form': kanji_form})
     vocab_lesson = vocab.objects.filter(
         linked_kanji__have_learned=True,
         have_learned=False,
     )
+    if vocab_lesson:
+        meaning = meanings.objects.filter(Q(vocab__item=vocab_lesson))
+        reading = readings.objects.filter(Q(vocab__item=vocab_lesson))
+        item_learned = get_object_or_404(vocab_lesson)
+        if request.method == "POST":
+            user_syn_form = MeaningSynonymsForm(request.POST)
+            vocab_form = VocabLessonForm(request.POST, instance=item_learned)
+            if user_syn_form.is_valid() and vocab_form.is_valid():
+                user_syn = user_syn_form.save(commit=False)
+                user_syn.kanji = item_learned
+                user_syn.save()
+                vocab_form = vocab_form.save(commit=False)
+                vocab_form.have_learned = True
+                vocab_form.save()
+                return HttpResponseRedirect(reverse('lesson_page'))
+            else:
+                user_syn_form = MeaningSynonymsForm()
+                vocab_form = VocabLessonForm(instance=item_learned)
+            return render(request, 'app/lesson.html', {'lesson': kanji_lesson, 'meaning': meaning, 'reading': reading,
+                                               'user_syn_form': user_syn_form, 'item_form': vocab_form})
 
-    # can't randomize lesson like this - impacts writing to the db
-    lesson_list = list(chain(kanji_lesson, vocab_lesson))
-    lesson = random.choice(lesson_list)
-
-    meaning = meanings.objects.filter(Q(kanji__item=lesson) | Q(vocab__item=lesson))
-    reading = readings.objects.filter(Q(kanji__item=lesson) | Q(vocab__item=lesson))
-
-    #user_syn = get_object_or_404(meaning)
-    item_learned = get_object_or_404(kanji.objects.filter(Q(item=lesson)))
-    if request.method == "POST":
-        user_syn_form = MeaningSynonymsForm(request.POST)
-        kanji_form = KanjiLessonForm(request.POST, instance=item_learned)
-        if user_syn_form.is_valid() and kanji_form.is_valid():
-            user_syn = user_syn_form.save(commit=False)
-            user_syn.kanji = item_learned
-            user_syn.save()
-            kanji_form = kanji_form.save(commit=False)
-            kanji_form.have_learned = True
-            kanji_form.save()
-            return HttpResponseRedirect(reverse('lesson_page'))
-    else:
-        user_syn_form = MeaningSynonymsForm()
-        kanji_form = KanjiLessonForm(instance=item_learned)
-
-    return render(request, 'app/lesson.html', {'lesson': lesson, 'meaning': meaning, 'reading': reading,
-                                               'user_syn_form': user_syn_form, 'kanji_form': kanji_form})
+    return render(request, 'app/lesson.html', {})
 
 def learn_lesson(request, item):
     if item.linked_kanji:

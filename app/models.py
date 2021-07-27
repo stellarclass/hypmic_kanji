@@ -45,7 +45,6 @@ class learningState(models.Model):
 class commonLearning(models.Model):
     # TBD: change name of class, remove items that have been moved to learning state
     have_learned = models.BooleanField(default=False)
-    order_of_learning = models.PositiveIntegerField()
     item = models.TextField()
     date_learned = models.DateTimeField(blank=True, null=True)
     date_last_reviewed = models.DateTimeField(blank=True, null=True)
