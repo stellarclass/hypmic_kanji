@@ -8,7 +8,7 @@ from django.utils import timezone
 
 class learningState(models.Model):
     # user-specific details
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    #user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     user_notes = models.TextField(blank=True, null=True)
 
     # linking to the item to be learned
@@ -91,8 +91,25 @@ class meanings(models.Model):
         return 'Meaning(s) are %s' % (self.meanings)
 
 class user_synonyms(models.Model):
-    meanings = models.ForeignKey(meanings, blank=True, null=True, on_delete=models.DO_NOTHING)
+    # maybe link this to learn state
+    kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
+    vocab = models.ForeignKey(vocab, blank=True, null=True, on_delete=models.DO_NOTHING)
     user_synonyms = models.TextField()
+
+    @property
+    def type_of_item(self):
+        return self.kanji or self.vocab
+
+    @type_of_item.setter
+    def type_of_item(self, obj):
+        if type(obj) == kanji:
+            self.kanji = obj
+            self.vocab = None
+        elif type(obj) == vocab:
+            self.vocab = obj
+            self.kanji = None
+        else:
+            raise ValueError("obj parameter must be an object of Kanji or Vocab class")
 
 class readings(models.Model):
     kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)

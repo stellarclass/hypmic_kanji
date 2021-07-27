@@ -19,6 +19,7 @@ def lesson_page(request):
         have_learned=False,
     )
 
+    # can't randomize lesson like this - impacts writing to the db
     lesson_list = list(chain(kanji_lesson, vocab_lesson))
     lesson = random.choice(lesson_list)
 
@@ -32,7 +33,7 @@ def lesson_page(request):
         kanji_form = KanjiLessonForm(request.POST, instance=item_learned)
         if user_syn_form.is_valid() and kanji_form.is_valid():
             user_syn = user_syn_form.save(commit=False)
-            user_syn.meanings = meaning.__str__
+            user_syn.kanji = item_learned
             user_syn.save()
             kanji_form = kanji_form.save(commit=False)
             kanji_form.have_learned = True
