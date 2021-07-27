@@ -14,12 +14,13 @@ import random
 def lesson_page(request):
     # TBD: add in a view when there is nothing to learn
     # if kanji is available, elif vocab, else nothing
+    # when updating the models, can probably trim down some of this code/the forms
+    # most of the stuff can be put into the learning state
 
     kanji_lesson = kanji.objects.filter(have_learned=False).first()
     if kanji_lesson:
         meaning = meanings.objects.filter(Q(kanji__item=kanji_lesson))
         reading = readings.objects.filter(Q(kanji__item=kanji_lesson))
-        #item_learned = get_object_or_404(kanji_lesson)
         if request.method == "POST":
             user_syn_form = MeaningSynonymsForm(request.POST)
             kanji_form = KanjiLessonForm(request.POST, instance=kanji_lesson)
@@ -39,17 +40,16 @@ def lesson_page(request):
     vocab_lesson = vocab.objects.filter(
         linked_kanji__have_learned=True,
         have_learned=False,
-    )
+    ).first()
     if vocab_lesson:
         meaning = meanings.objects.filter(Q(vocab__item=vocab_lesson))
         reading = readings.objects.filter(Q(vocab__item=vocab_lesson))
-        item_learned = get_object_or_404(vocab_lesson)
         if request.method == "POST":
             user_syn_form = MeaningSynonymsForm(request.POST)
-            vocab_form = VocabLessonForm(request.POST, instance=item_learned)
+            vocab_form = VocabLessonForm(request.POST, instance=vocab_lesson)
             if user_syn_form.is_valid() and vocab_form.is_valid():
                 user_syn = user_syn_form.save(commit=False)
-                user_syn.kanji = item_learned
+                user_syn.vocab = vocab_lesson
                 user_syn.save()
                 vocab_form = vocab_form.save(commit=False)
                 vocab_form.have_learned = True
@@ -57,28 +57,37 @@ def lesson_page(request):
                 return HttpResponseRedirect(reverse('lesson_page'))
             else:
                 user_syn_form = MeaningSynonymsForm()
-                vocab_form = VocabLessonForm(instance=item_learned)
-            return render(request, 'app/lesson.html', {'lesson': kanji_lesson, 'meaning': meaning, 'reading': reading,
-                                               'user_syn_form': user_syn_form, 'item_form': vocab_form})
+                vocab_form = VocabLessonForm(instance=vocab_lesson)
+            return render(request, 'app/lesson.html', {'lesson': vocab_lesson, 'meaning': meaning, 'reading': reading,
+                                                       'user_syn_form': user_syn_form, 'item_form': vocab_form})
 
     return render(request, 'app/lesson.html', {})
 
-def learn_lesson(request, item):
-    if item.linked_kanji:
-        vocab.have_learned=True
-        vocab.save()
-    else:
-        kanji.have_learned=True
-        kanji.save()
-    return HttpResponseRedirect(reverse('lesson_page'))
-
 def review_page(request):
     # TBD: add in a view when there is nothing to review
-    kanji_review = kanji.objects.filter(have_learned=True)
-    vocab_review = vocab.objects.filter(have_learned=True)
+    # need to update recall probs for each item before we run the reviews - should this be a "pre-view" somewhere?
 
-    review_list = list(chain(kanji_review, vocab_review))
-    review = random.choice(review_list)
+    kanji_review = kanji.objects.filter(have_learned=True).order_by('recall_prob').last()
+    vocab_review = vocab.objects.filter(have_learned=True).order_by('recall_prob').last()
+
+    if not kanji_review and not vocab_review:
+        # no reviews available
+        return render(request, 'app/review.html', {})
+
+    elif not kanji_review:
+        # go straight into vocab review
+        review = vocab_review
+
+    elif not vocab_review:
+        # go straight into kanji review
+        review = kanji_review
+
+    # if both available, pick whichever one is lower in recall
+    elif kanji_review.recall_prob > vocab_review.recall_prob:
+        review = vocab_review
+
+    else:
+        review = kanji_review
 
     meaning = meanings.objects.filter(Q(kanji__item=review) | Q(vocab__item=review))
     reading = readings.objects.filter(Q(kanji__item=review) | Q(vocab__item=review))

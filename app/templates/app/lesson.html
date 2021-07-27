@@ -9,6 +9,10 @@
 <h1>{{ lesson.item }}</h1>
 <p>{%if lesson.linked_kanji%}
         This is vocab!
+        <p>{% for k in lesson.linked_kanji%}
+            {% if forloop.counter > 1%} | {% endif %}
+            {{ lesson.linked_kanji }}
+        {% endfor %}</p>
     {% else %}
         This is kanji!
 {% endif %}</p>
