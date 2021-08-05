@@ -93,7 +93,7 @@ class user_synonyms(models.Model):
     # maybe link this to learn state
     kanji = models.ForeignKey(kanji, blank=True, null=True, on_delete=models.DO_NOTHING)
     vocab = models.ForeignKey(vocab, blank=True, null=True, on_delete=models.DO_NOTHING)
-    user_synonyms = models.TextField()
+    user_synonyms = models.TextField(blank=True, null=True)
 
     @property
     def type_of_item(self):

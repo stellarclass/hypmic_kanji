@@ -17,8 +17,16 @@ def lesson_page(request):
     # when updating the models, can probably trim down some of this code/the forms
     # most of the stuff can be put into the learning state
 
-    kanji_lesson = kanji.objects.filter(have_learned=False).first()
-    if kanji_lesson:
+    ### vocab lesson not showing up
+
+    # TO DO:
+    # filter by source, so we can select different sources to learn from
+    # order by learning order?
+
+    kanji_lesson = kanji.objects.filter(have_learned=False)
+    if kanji_lesson.exists():
+        print('kanji')
+        kanji_lesson = kanji_lesson.first()
         meaning = meanings.objects.filter(Q(kanji__item=kanji_lesson))
         reading = readings.objects.filter(Q(kanji__item=kanji_lesson))
         if request.method == "POST":
@@ -40,8 +48,10 @@ def lesson_page(request):
     vocab_lesson = vocab.objects.filter(
         linked_kanji__have_learned=True,
         have_learned=False,
-    ).first()
-    if vocab_lesson:
+    )
+    if vocab_lesson.exists():
+        print('vocab')
+        vocab_lesson = vocab_lesson.first()
         meaning = meanings.objects.filter(Q(vocab__item=vocab_lesson))
         reading = readings.objects.filter(Q(vocab__item=vocab_lesson))
         if request.method == "POST":
@@ -55,10 +65,10 @@ def lesson_page(request):
                 vocab_form.have_learned = True
                 vocab_form.save()
                 return HttpResponseRedirect(reverse('lesson_page'))
-            else:
-                user_syn_form = MeaningSynonymsForm()
-                vocab_form = VocabLessonForm(instance=vocab_lesson)
-            return render(request, 'app/lesson.html', {'lesson': vocab_lesson, 'meaning': meaning, 'reading': reading,
+        else:
+            user_syn_form = MeaningSynonymsForm()
+            vocab_form = VocabLessonForm(instance=vocab_lesson)
+        return render(request, 'app/lesson.html', {'lesson': vocab_lesson, 'meaning': meaning, 'reading': reading,
                                                        'user_syn_form': user_syn_form, 'item_form': vocab_form})
 
     return render(request, 'app/lesson.html', {})
