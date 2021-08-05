@@ -54,6 +54,9 @@ class commonLearning(models.Model):
     half_life = models.FloatField(default = 24.0)
     user_notes = models.TextField(blank=True, null=True)
 
+    # order of learning should be put back in
+    # gotta figure a good way to assign order other than "this is the order it was added"
+
     class Meta:
         abstract = True
 

@@ -2,7 +2,10 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.db.models import F
+
+from django.core.signals import request_started
+from django.dispatch import receiver
+
 from django.utils import timezone
 
 from .models import kanji, vocab, meanings, readings, source, examples
@@ -10,14 +13,11 @@ from .forms import KanjiLessonForm, VocabLessonForm, MeaningSynonymsForm
 
 import ebisu
 
-from itertools import chain
-import random
-
 # Create your views here.
 
 def lesson_page(request):
     # TBD: add in a view when there is nothing to learn
-    # that probably should be done with blocks?
+    # maybe make a pre-view page
     # if kanji is available, elif vocab, else nothing
     # when updating the models, can probably trim down some of this code/the forms
     # most of the stuff can be put into the learning state
@@ -78,23 +78,32 @@ def lesson_page(request):
 
     return render(request, 'app/lesson.html', {})
 
-def update_review_recall(request):
+# update review recall every time the review page is accessed
+# probably move this to a pre-review page so it only does it once every session?
+# otherwise if this grows, it'll start to become very slow thanks to the loops
+@receiver(request_started)
+def callback(sender, environ, **kwargs):
+    if environ['PATH_INFO'] == '/review/':
+        print('Reviews Updating')
+        from datetime import timedelta
+        from django.utils import timezone
 
+        now = timezone.now()
+        oneHour = timedelta(hours=1)
 
-    product = Product.objects.get(name='Venezuelan Beaver Cheese')
-    product.number_sold = F('number_sold') + 1
-    product.save()
-    now = timezone.now()
-    ebisu.predictRecall(F('model'),
-                        (now - F('date_last_reviewed')) / oneHour,
-                        exact=True)
+        for kanji_review in kanji.objects.filter(have_learned=True):
+            kanji_review.recall_prob = ebisu.predictRecall(
+                (kanji_review.alpha, kanji_review.beta, kanji_review.half_life),
+                (now - kanji_review.date_last_reviewed) / oneHour,
+                exact=True)
+            kanji_review.save(update_fields=['recall_prob'])
 
-
-
-    kanji.objects.filter(have_learned=True).update(recall=
-                                                   ebisu.predictRecall(model, now-date_learned, exact=True))
-
-    return HttpResponseRedirect(request.GET.get('next'))
+        for vocab_review in vocab.objects.filter(have_learned=True):
+            vocab_review.recall_prob = ebisu.predictRecall(
+                (vocab_review.alpha, vocab_review.beta, vocab_review.half_life),
+                (now - vocab_review.date_last_reviewed) / oneHour,
+                exact=True)
+            vocab_review.save(update_fields=['recall_prob'])
 
 def review_page(request):
     # TBD: add in a view when there is nothing to review
