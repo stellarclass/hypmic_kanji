@@ -2,9 +2,13 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.db.models import F
+from django.utils import timezone
 
 from .models import kanji, vocab, meanings, readings, source, examples
 from .forms import KanjiLessonForm, VocabLessonForm, MeaningSynonymsForm
+
+import ebisu
 
 from itertools import chain
 import random
@@ -13,11 +17,10 @@ import random
 
 def lesson_page(request):
     # TBD: add in a view when there is nothing to learn
+    # that probably should be done with blocks?
     # if kanji is available, elif vocab, else nothing
     # when updating the models, can probably trim down some of this code/the forms
     # most of the stuff can be put into the learning state
-
-    ### vocab lesson not showing up
 
     # TO DO:
     # filter by source, so we can select different sources to learn from
@@ -25,7 +28,6 @@ def lesson_page(request):
 
     kanji_lesson = kanji.objects.filter(have_learned=False)
     if kanji_lesson.exists():
-        print('kanji')
         kanji_lesson = kanji_lesson.first()
         meaning = meanings.objects.filter(Q(kanji__item=kanji_lesson))
         reading = readings.objects.filter(Q(kanji__item=kanji_lesson))
@@ -38,6 +40,8 @@ def lesson_page(request):
                 user_syn.save()
                 kanji_form = kanji_form.save(commit=False)
                 kanji_form.have_learned = True
+                kanji_form.date_learned = timezone.now()
+                kanji_form.date_last_reviewed = timezone.now()
                 kanji_form.save()
                 return HttpResponseRedirect(reverse('lesson_page'))
         else:
@@ -50,7 +54,6 @@ def lesson_page(request):
         have_learned=False,
     )
     if vocab_lesson.exists():
-        print('vocab')
         vocab_lesson = vocab_lesson.first()
         meaning = meanings.objects.filter(Q(vocab__item=vocab_lesson))
         reading = readings.objects.filter(Q(vocab__item=vocab_lesson))
@@ -63,6 +66,8 @@ def lesson_page(request):
                 user_syn.save()
                 vocab_form = vocab_form.save(commit=False)
                 vocab_form.have_learned = True
+                vocab_form.date_learned = timezone.now()
+                vocab_form.date_last_reviewed = timezone.now()
                 vocab_form.save()
                 return HttpResponseRedirect(reverse('lesson_page'))
         else:
@@ -72,6 +77,24 @@ def lesson_page(request):
                                                        'user_syn_form': user_syn_form, 'item_form': vocab_form})
 
     return render(request, 'app/lesson.html', {})
+
+def update_review_recall(request):
+
+
+    product = Product.objects.get(name='Venezuelan Beaver Cheese')
+    product.number_sold = F('number_sold') + 1
+    product.save()
+    now = timezone.now()
+    ebisu.predictRecall(F('model'),
+                        (now - F('date_last_reviewed')) / oneHour,
+                        exact=True)
+
+
+
+    kanji.objects.filter(have_learned=True).update(recall=
+                                                   ebisu.predictRecall(model, now-date_learned, exact=True))
+
+    return HttpResponseRedirect(request.GET.get('next'))
 
 def review_page(request):
     # TBD: add in a view when there is nothing to review
